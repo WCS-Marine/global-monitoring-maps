@@ -28,7 +28,7 @@ allreefs_info
 
 # load dataset (original allreefs.Rdata transformed using "01-format-allreefs.R")
 
-load(here("wcs-local-reef-pressures", "allreefs_WGS84.RData"))
+load(here("data", "wcs-local-reef-pressures", "allreefs_WGS84.RData"))
 
 allreefs <- allreefs %>% 
   select(OBJECTID, geometry)
@@ -161,7 +161,8 @@ gcrmn_overlap$gcrmn
 
 gcrmn_overlap <- gcrmn_overlap %>%  mutate(across(c(gcrmn), na_if, "NA"))
 
-total_gcrmn_overlap <- gcrmn_overlap %>% mutate(db = coalesce(db, gcrmn))
+total_gcrmn_overlap <- gcrmn_overlap %>% mutate(db = coalesce(db, gcrmn)) %>% 
+  dplyr::select(-c(reef_life, reef_check, gcrmn))
 total_gcrmn_overlap %>% tabyl(db) %>% adorn_totals()
 
 sf_gcrmn_overlap <- total_gcrmn_overlap %>% st_as_sf() %>% 
@@ -170,9 +171,9 @@ sf_gcrmn_overlap <- total_gcrmn_overlap %>% st_as_sf() %>%
 tabyl_gcrmn <- sf_gcrmn_overlap %>% tabyl(db) %>% adorn_totals() %>% 
   adorn_pct_formatting()
 
-#total_gcrmn_overlap %>% write.csv(here("total_cc.csv"))
-#tabyl_gcrmn %>% write.csv(here("percent_cc.csv"))
-#sf_gcrmn_overlap %>% write_rds(here("total_cc_sf.RDS"))
+#total_gcrmn_overlap %>% write.csv(here("data", "total_cc.csv"))
+#tabyl_gcrmn %>% write.csv(here("data", "percent_cc.csv"))
+#sf_gcrmn_overlap %>% write_rds(here("data", "total_cc_sf.RDS"))
 
 # Static World Map
 theme_set(theme_bw())
