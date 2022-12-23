@@ -162,6 +162,9 @@ gcrmn_overlap$gcrmn
 gcrmn_overlap <- gcrmn_overlap %>%  mutate(across(c(gcrmn), na_if, "NA"))
 
 total_gcrmn_overlap <- gcrmn_overlap %>% mutate(db = coalesce(db, gcrmn)) %>% 
+  mutate(cc_site = case_when(reef_life == "reef_life" | reef_check == "reef_check" |
+                               gcrmn == "gcrmn" | cc_site == 1 ~ 1,
+                          TRUE ~ cc_site)) %>% 
   dplyr::select(-c(reef_life, reef_check, gcrmn))
 total_gcrmn_overlap %>% tabyl(db) %>% adorn_totals()
 
