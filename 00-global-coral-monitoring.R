@@ -178,6 +178,46 @@ tabyl_gcrmn <- sf_gcrmn_overlap %>% tabyl(db) %>% adorn_totals() %>%
 #tabyl_gcrmn %>% write.csv(here("data", "percent_cc.csv"))
 #sf_gcrmn_overlap %>% write_rds(here("data", "total_cc_sf.RDS"))
 
+# Add nat geo
+## change all reef life to nat geo
+nat_geo <- read_csv(here("data", "nat_geo.csv"))
+
+nat_geo_sf <- nat_geo %>% st_as_sf(coords = c("Long","Lat"), 
+                                       crs = 4326, remove = F) 
+
+compareCRS(allreefs, nat_geo_sf)
+
+nat_geo_lrp <- st_join(nat_geo_sf, allreefs) %>% 
+  as_tibble() %>% 
+  drop_na(OBJECTID)
+
+compareCRS(sf_gcrmn_overlap, nat_geo_sf)
+
+ng_lst <- st_intersects(sf_gcrmn_overlap, nat_geo_sf, prepared = TRUE)
+overlap_ng <- lengths(ng_lst) > 0
+ng_overlap <- sf_gcrmn_overlap %>%
+  mutate(nat_geo = overlap_ng)
+ng_overlap <- ng_overlap %>% mutate(nat_geo = as.character(nat_geo))
+ng_overlap$nat_geo
+
+ng_overlap <- ng_overlap %>% mutate(nat_geo = recode(nat_geo, 
+                                                       "TRUE" = "nat_geo",
+                                                       "FALSE" = "NA"))
+ng_overlap <- ng_overlap %>%  mutate(across(c(nat_geo), na_if, "NA"))
+
+total_ng_overlap <- ng_overlap %>% mutate(db = coalesce(db, nat_geo))
+total_ng_overlap %>% tabyl(db) %>% adorn_totals()
+
+sf_ng_overlap <- total_ng_overlap %>% st_as_sf() %>% st_transform(crs = 4326)
+
+tabyl_ng <- sf_ng_overlap %>% tabyl(db) %>% adorn_totals() %>% 
+  adorn_pct_formatting()
+
+#total_ng_overlap %>% write.csv(here("data", "total_cc.csv"))
+#tabyl_ng %>% write.csv(here("data", "percent_cc.csv"))
+#sf_ng_overlap %>% write_rds(here("data", "total_cc_sf.RDS"))
+
+
 # Static World Map
 theme_set(theme_bw())
 
@@ -190,8 +230,8 @@ ggplot(data = world) +
   annotation_north_arrow(location = "bl", which_north = "true", 
                          pad_x = unit(0.5, "in"), pad_y = unit(0.5, "in"),
                          style = north_arrow_fancy_orienteering) +
-  geom_sf(data = sf_gcrmn_overlap, aes(fill = sf_gcrmn_overlap$db, 
-                                       color = sf_gcrmn_overlap$db), 
+  geom_sf(data = sf_ng_overlap, aes(fill = sf_ng_overlap$db, 
+                                       color = sf_ng_overlap$db), 
           size = 1, show.legend = "point") +
   scale_fill_viridis_d(alpha = 0.4) +
   scale_color_viridis_d(alpha = 0.4) +
@@ -207,9 +247,9 @@ ggplot(data = world) +
   annotation_north_arrow(location = "bl", which_north = "true", 
                          pad_x = unit(0.5, "in"), pad_y = unit(0.5, "in"),
                          style = north_arrow_fancy_orienteering) +
-  geom_sf(data = sf_gcrmn_overlap, aes(fill = sf_gcrmn_overlap$db, 
-                                       color = sf_gcrmn_overlap$db, 
-                                       order = sf_gcrmn_overlap$db), 
+  geom_sf(data = sf_ng_overlap, aes(fill = sf_ng_overlap$db, 
+                                       color = sf_ng_overlap$db, 
+                                       order = sf_ng_overlap$db), 
           size = 1, show.legend = "point") +
   scale_fill_manual(values=alpha(c("#fde725","#a0da39","#4ac16d","#1fa187",
                                    "#277f8e","#365c8d","#46327e","#440154"), 0.4), 
@@ -236,7 +276,7 @@ st_shift_longitude(sfc)
 d = st_as_sf(data.frame(id = 1:2, geometry = sfc))
 st_shift_longitude(d)
 
-overlap_shift <- st_shift_longitude(sf_gcrmn_overlap)
+overlap_shift <- st_shift_longitude(sf_ng_overlap)
 
 ggplot() +
   geom_sf() +
