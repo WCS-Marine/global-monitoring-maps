@@ -179,7 +179,6 @@ tabyl_gcrmn <- sf_gcrmn_overlap %>% tabyl(db) %>% adorn_totals() %>%
 #sf_gcrmn_overlap %>% write_rds(here("data", "total_cc_sf.RDS"))
 
 # Add nat geo
-## change all reef life to nat geo
 nat_geo <- read_csv(here("data", "nat_geo.csv"))
 
 nat_geo_sf <- nat_geo %>% st_as_sf(coords = c("Long","Lat"), 
