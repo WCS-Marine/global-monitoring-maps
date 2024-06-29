@@ -22,12 +22,11 @@ data %>%
 
 
 
-#how many object id pixels have multiple monitoring efforts? 
+#how many object id pixels are monitored in each database? 
 data %>% 
   group_by(objectid) %>% 
   summarize(n = paste(db, collapse = ", ")) %>% 
   tabyl(n)
-
 
 
 #objectid is 5x5km andrello pixel, right? 
@@ -46,18 +45,25 @@ data %>%
 data %>% 
   tabyl(cc_site)
 
-data %>% 
-  tabyl(db) %>% 
-  arrange(-n)
+#db_summary <- 
+  data %>%  
+  #tabyl(db, show_na = FALSE) %>% 
+  tabyl(db, show_na = TRUE) %>% 
+  arrange(-n) 
+
+#write_csv(db_summary, "db_summary.csv")
 
 
 
-#summaries
+??tabyl
+
+
+ #summaries
 data %>% 
   select(objectid, 
          cc_site) %>% 
   distinct() %>% 
-  tabyl(cc_site) #3% of coral reef 5-km pixels are surveyed
+  tabyl(cc_site) #11.9% of the world's coral reefs (assessed in 5-km pixels) have survey data in moniotoring databases
 
 #by country, total pixels
 data %>% 
@@ -70,8 +76,8 @@ data %>%
 
 #by country, proportion of pixels
 #0 cc_sites don't have countries
-data %>% 
-  filter(cc_site == 0)
+# data %>% 
+#   filter(cc_site == 0)
 
 
   

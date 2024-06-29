@@ -1,6 +1,8 @@
+#This script compiles a set of global coral reef monitoring site coordinations from major monitoring efforts
+
 library(raster)
-library(rgdal)
-library(rgeos)
+#library(rgdal)
+#library(rgeos)
 library(here)
 library(sf)
 library(matrixStats)
@@ -19,7 +21,7 @@ library(leaflet.esri)
 library(htmlwidgets)
 library(readxl)
 library(janitor)
-library(biogeo)
+#library(biogeo)
 
 allreefs_info <- read_excel(here("data","wcs-local-reef-pressures",
                                  "key.xlsx"))
@@ -35,11 +37,37 @@ allreefs <- allreefs %>%
 
 allreefs
 
-# Load coral cover sites (4,766 sites) ---- 
+# Load coral cover sites from Whitney compilation (4,766 sites) ---- 
 cc_sites <- read_csv(here("data","cc_sites.csv"))
+cc_sites
+
+#Replace MERMAID sites with most recent data (2024)
+# install.packages("remotes")
+#remotes::install_github("data-mermaid/mermaidr")
+library(mermaidr)
+
+sites <- mermaid_get_sites()
+
+mermaid_sites <- sites %>% 
+  select(country, 
+         name, 
+         latitude, 
+         longitude) %>% 
+  distinct() %>% 
+  mutate(db = "mermaid") %>% 
+  select(db, 
+         country:longitude)
+
+cc_sites <- cc_sites %>% 
+  filter(db != "mermaid") %>% 
+  #tabyl(db) %>% 
+  bind_rows(mermaid_sites)
+
 
 # List # of sites per database included (n = 4766 sites)
-cc_sites %>% tabyl(db) %>% adorn_totals()
+cc_sites %>% 
+  tabyl(db) %>% 
+  adorn_totals()
 
 cc_sites_sf <- cc_sites %>% 
   st_as_sf(coords = c("longitude","latitude"), crs = 4326, remove = F) 
@@ -67,7 +95,7 @@ lrp_cc <- cc_sites_lrp %>%
 
 lrp_cc_sf <- st_as_sf(lrp_cc)
 
-# Add reef life
+# Add Reef Life Survey sites
 reef_life <- read_csv(here("data", "reef_life_site_info.csv"))
 
 reef_life_sf <- reef_life %>% st_as_sf(coords = c("longitude","latitude"), 
@@ -98,7 +126,7 @@ total_rl_overlap %>% tabyl(db) %>% adorn_totals()
 
 sf_rl_overlap <- total_rl_overlap %>% st_as_sf() %>% st_transform(crs = 4326)
 
-# Add reef check
+# Add Reef Check
 reef_check <- read_csv(here("data", "reef_check_all.csv"))
 
 reef_check_sf <- reef_check %>% st_as_sf(coords = c("Long","Lat"), crs = 4326, 
@@ -180,6 +208,7 @@ tabyl_gcrmn <- sf_gcrmn_overlap %>% tabyl(db) %>% adorn_totals() %>%
 
 # Add nat geo
 nat_geo <- read_csv(here("data", "nat_geo.csv"))
+nat_geo
 
 nat_geo_sf <- nat_geo %>% st_as_sf(coords = c("Long","Lat"), 
                                        crs = 4326, remove = F) 
@@ -212,9 +241,9 @@ sf_ng_overlap <- total_ng_overlap %>% st_as_sf() %>% st_transform(crs = 4326)
 tabyl_ng <- sf_ng_overlap %>% tabyl(db) %>% adorn_totals() %>% 
   adorn_pct_formatting()
 
-#total_ng_overlap %>% write.csv(here("data", "total_cc.csv"))
-#tabyl_ng %>% write.csv(here("data", "percent_cc.csv"))
-#sf_ng_overlap %>% write_rds(here("data", "total_cc_sf.RDS"))
+total_ng_overlap %>% write.csv(here("data", "total_cc.csv"))
+tabyl_ng %>% write.csv(here("data", "percent_cc.csv"))
+sf_ng_overlap %>% write_rds(here("data", "total_cc_sf.RDS"))
 
 
 # Static World Map
@@ -238,7 +267,7 @@ ggplot(data = world) +
        fill = element_blank()) +
   labs(x = element_blank(), y = element_blank())
 
-#ggsave("Static-CC-Map.pdf", height = 5, width = 10)
+ggsave("Static-CC-Map.pdf", height = 5, width = 10)
 
 
 ggplot(data = world) +
@@ -259,7 +288,7 @@ ggplot(data = world) +
   labs(x="Longitude", y="Latitude", color = "Databases", fill = element_blank()) +
   labs(x = element_blank(), y = element_blank())
 
-#ggsave("Static-CC-Map2.pdf", height = 5, width = 10)
+ggsave("Static-CC-Map2.pdf", height = 5, width = 10)
 
 # Pacific Map
 library(maps)
@@ -294,3 +323,4 @@ ggplot() +
   labs(x = element_blank(), y = element_blank())
 
 ggsave("Pacific-Map.pdf", height = 4, width = 6)
+
