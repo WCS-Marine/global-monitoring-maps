@@ -4,8 +4,12 @@ library(sf)
 library(tidyverse)
 library(janitor)
 
-
-
+#update PAT token to use GitHub 
+#https://happygitwithr.com/https-pat
+library(usethis)
+use_git_config(user.name = "Emily Darling", user.email = "esdarling@gmail.com")
+usethis::create_github_token()
+gitcreds::gitcreds_set()
 
 #load Andrello 54,596 reef cell polygons
 load(here("data", "wcs-local-reef-pressures", "allreefs_WGS84.RData"))
