@@ -30,13 +30,14 @@ cc_sites %>%
   tabyl(db) %>% 
   adorn_totals()
 
-# more recent MERMAID sites (June 28, 2024)
-# install.packages("remotes")
+# more recent MERMAID sites (Oct 27, 2024)
+#install.packages("remotes")
 
 #remotes::install_github("data-mermaid/mermaidr")
 library(mermaidr)
 
 sites <- mermaid_get_sites()
+sites
 
 mermaid_sites <- sites %>% 
   select(country, 
@@ -122,15 +123,36 @@ nat_geo <- nat_geo %>%
 
 nat_geo
 
+#ReefCloud
+reefcloud <- read_csv(here("data","ReefCloud_Sites_Sep2024.csv")) %>% 
+  clean_names()
+
+reefcloud <- reefcloud %>% 
+  mutate(db = "reefcloud") %>% 
+  select(db, 
+         sovereign1,
+         latitude, 
+         longitude) %>% 
+  rename("country" = sovereign1)
+ 
+reefcloud 
+
+
 #compile all datasets 
 all_surveys <- cc_sites %>% 
   bind_rows(gcrmn) %>% 
   bind_rows(mermaid_sites) %>% 
   bind_rows(nat_geo) %>% 
   bind_rows(reef_check) %>% 
-  bind_rows(rls)
+  bind_rows(rls) %>% 
+  bind_rows(reefcloud) %>% 
+  distinct()
 
 all_surveys
+
+all_surveys %>% 
+  tabyl(db) %>% 
+  arrange(-n)
 
 #convert to sf / spatial
 
@@ -138,8 +160,8 @@ all_surveys_sf <- all_surveys %>%
   st_as_sf(coords = c("longitude","latitude"), 
            crs = 4326, remove = F) 
 
-compareCRS(allreefs, all_surveys_sf)
-?compareCRS
+# compareCRS(allreefs, all_surveys_sf)
+# ??compareCRS
 
 #overlap with 54,596 all reefs
 #overlap is df with each lat-long site mapped to an OBJECTID 5-km reef cell
@@ -177,12 +199,11 @@ cells_with_surveys <- n_surveys_per_cell %>%
 
 cells_with_surveys
 nrow(cells_with_surveys)
-#6,495 cells have at least one survey from a db
+#before reefcloud, 6,559 cells have at least one survey from a db
+#now, 7611 cells have at least one suvey
 
-#11.9 % of 54,596 cells
-nrow(cells_with_surveys) / 54586
-
-
+#13.9 % of 54,596 cells
+nrow(cells_with_surveys) / 54596
 
 overlap_summary <- overlap %>% 
   tabyl(OBJECTID) %>% 
@@ -209,19 +230,24 @@ write_csv(all_surveys,
 
 # Static World Map
 theme_set(theme_bw())
+#install.packages("rnaturalearthdata")
 
 world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
 
 all_surveys_sf
 
 #plot all sites by database
+#note includes sites in temperate (Canada) and some typos in continents
+#clip only to lat-longs in reef cells? 
+#add reef cells as under-layer? 
+
 ggplot(data = world) +
   geom_sf() +
   # coord_sf(default_crs = sf::st_crs(4326), expand = FALSE) +
   #  annotation_scale(plot_unit = "km", location = "bl", width_hint = 0.2) +
-  annotation_north_arrow(location = "bl", which_north = "true", 
-                         pad_x = unit(0.5, "in"), pad_y = unit(0.5, "in"),
-                         style = north_arrow_fancy_orienteering) +
+  #annotation_north_arrow(location = "bl", which_north = "true", 
+                         #pad_x = unit(0.5, "in"), pad_y = unit(0.5, "in"),
+                         #style = north_arrow_fancy_orienteering) +
   geom_sf(data = all_surveys_sf, aes(fill = db), 
           size = 1, shape = 21, show.legend = "point") +
   scale_fill_viridis_d(alpha = 0.4) +
